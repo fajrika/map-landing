@@ -64,7 +64,7 @@ function initJourney() {
     new THREE.TorusKnotGeometry(1.15, 0.32, 140, 18),
     matStandard(0x0ea5e9)
   );
-  heroKnot.position.set(0, 0.6, -18);
+  heroKnot.position.set(0, 0.6, -12);
   const heroShell = new THREE.Mesh(
     new THREE.TorusKnotGeometry(1.45, 0.37, 90, 12),
     matWire(0x38bdf8, 0.3)
@@ -188,14 +188,14 @@ function initJourney() {
     requestAnimationFrame(tick);
     const t = clock.getElapsedTime();
     const sp = scrollProgress;
-    const camZ = 6 + sp * TRAVEL;
+    const camZ = 6 - sp * TRAVEL;
     const smoothZ = lerp(camera.position.z, camZ, 0.1);
 
     // kamera terbang + goyangan halus + parallax mouse
     camera.position.z = smoothZ;
     camera.position.x = lerp(camera.position.x, pointer.x * 1.4, 0.04);
     camera.position.y = lerp(camera.position.y, 0.5 + pointer.y * 0.6 + Math.sin(t * 0.5) * 0.15, 0.04);
-    camera.lookAt(camera.position.x * 1.2, camera.position.y * 0.8, smoothZ + 20);
+    camera.lookAt(camera.position.x * 1.2, camera.position.y * 0.8, smoothZ - 18);
 
     // grid mengikuti kamera agar efek "terbang" terasa
     grid.position.z = smoothZ;
