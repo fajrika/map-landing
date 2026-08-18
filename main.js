@@ -25,185 +25,225 @@ menu.querySelectorAll("a").forEach((a) =>
   })
 );
 
-/* ---------- 3D HERO (scroll-reactive) ---------- */
-let scrollProgress = 0; // 0..1 from page top
-const scrollTarget = { x: 0, y: 0 };
+/* =========================================================
+   PERSISTENT 3D JOURNEY — dunia 3D kontinu di belakang halaman
+   Kamera terbang maju sepanjang sumbu Z mengikuti scroll,
+   melewati objek-objek 3D yang ditempatkan di sepanjang jalur.
+   ========================================================= */
+let scrollProgress = 0; // 0..1 dari atas halaman
+const pointer = { x: 0, y: 0 };
 
-function initScene() {
-  const canvas = document.getElementById("hero-canvas");
+function initJourney() {
+  const canvas = document.getElementById("bg-canvas");
   const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  renderer.setClearColor(0x0b1220, 1);
 
   const scene = new THREE.Scene();
-  const camera = new THREE.PerspectiveCamera(60, 1, 0.1, 100);
-  camera.position.z = 9;
+  const camera = new THREE.PerspectiveCamera(60, 1, 0.1, 300);
+  camera.position.set(0, 0.5, 6);
 
-  const group = new THREE.Group();
-  scene.add(group);
+  const world = new THREE.Group();
+  scene.add(world);
 
-  const knotGeo = new THREE.TorusKnotGeometry(1.15, 0.32, 140, 18);
-  const knotMat = new THREE.MeshPhysicalMaterial({
-    color: 0x0ea5e9,
-    metalness: 0.55,
-    roughness: 0.18,
-    transparent: true,
-    opacity: 0.92,
-    emissive: 0x0369a1,
-    emissiveIntensity: 0.28,
-  });
-  const knot = new THREE.Mesh(knotGeo, knotMat);
-  knot.position.set(0, 0.2, 0);
-  group.add(knot);
-
-  const shellMat = new THREE.MeshBasicMaterial({ color: 0x38bdf8, wireframe: true, transparent: true, opacity: 0.28 });
-  const shell = new THREE.Mesh(new THREE.TorusKnotGeometry(1.42, 0.36, 90, 12), shellMat);
-  group.add(shell);
-
-  const ringMat = new THREE.MeshBasicMaterial({ color: 0x7dd3fc, transparent: true, opacity: 0.5, side: THREE.DoubleSide });
-  const ring1 = new THREE.Mesh(new THREE.RingGeometry(2.4, 2.48, 64), ringMat);
-  ring1.rotation.x = Math.PI / 2.4;
-  const ring2 = new THREE.Mesh(new THREE.RingGeometry(2.9, 2.96, 64), ringMat);
-  ring2.rotation.x = Math.PI / 1.8;
-  ring2.material.opacity = 0.28;
-  group.add(ring1, ring2);
-
-  const count = 520;
-  const pos = new Float32Array(count * 3);
-  for (let i = 0; i < count * 3; i++) pos[i] = (Math.random() - 0.5) * 22;
-  const pGeo = new THREE.BufferGeometry();
-  pGeo.setAttribute("position", new THREE.BufferAttribute(pos, 3));
-  const pMat = new THREE.PointsMaterial({ color: 0x38bdf8, size: 0.035, transparent: true, opacity: 0.7 });
-  const particles = new THREE.Points(pGeo, pMat);
-  scene.add(particles);
-
-  const maxDist = 2.2;
-  const lineMat = new THREE.LineBasicMaterial({ color: 0x38bdf8, transparent: true, opacity: 0.14 });
-  const lines = new THREE.LineSegments(new THREE.BufferGeometry(), lineMat);
-  scene.add(lines);
-  const linePositions = [];
-
-  const accentGroup = new THREE.Group();
-  const geoPool = [
-    new THREE.IcosahedronGeometry(0.16, 0),
-    new THREE.OctahedronGeometry(0.13, 0),
-    new THREE.BoxGeometry(0.16, 0.16, 0.16),
-    new THREE.DodecahedronGeometry(0.13, 0),
-  ];
-  for (let i = 0; i < 26; i++) {
-    const mat = new THREE.MeshStandardMaterial({
-      color: new THREE.Color().setHSL(0.56 + Math.random() * 0.12, 0.75, 0.6),
-      metalness: 0.4,
-      roughness: 0.3,
-      transparent: true,
-      opacity: 0.75,
+  const matStandard = (color, opts = {}) =>
+    new THREE.MeshStandardMaterial({
+      color,
+      metalness: opts.metalness ?? 0.55,
+      roughness: opts.roughness ?? 0.22,
+      transparent: opts.transparent ?? true,
+      opacity: opts.opacity ?? 0.9,
+      emissive: opts.emissive ?? 0x0369a1,
+      emissiveIntensity: opts.emissiveIntensity ?? 0.25,
     });
-    const m = new THREE.Mesh(geoPool[i % geoPool.length], mat);
-    m.position.set((Math.random() - 0.5) * 16, (Math.random() - 0.5) * 9, (Math.random() - 0.5) * 8 - 2);
+  const matWire = (color, opacity = 0.28) =>
+    new THREE.MeshBasicMaterial({ color, wireframe: true, transparent: true, opacity });
+
+  // ---- HERO CENTERPIECE (torus knot) ----
+  const heroKnot = new THREE.Mesh(
+    new THREE.TorusKnotGeometry(1.15, 0.32, 140, 18),
+    matStandard(0x0ea5e9)
+  );
+  heroKnot.position.set(0, 0.6, -18);
+  const heroShell = new THREE.Mesh(
+    new THREE.TorusKnotGeometry(1.45, 0.37, 90, 12),
+    matWire(0x38bdf8, 0.3)
+  );
+  heroShell.position.copy(heroKnot.position);
+  world.add(heroKnot, heroShell);
+
+  // ---- ZONE CENTERPIECES (objek besar per bagian halaman) ----
+  const zoneDefs = [
+    { z: -66, geo: new THREE.IcosahedronGeometry(1.7, 0), color: 0x38bdf8, wire: true, wireColor: 0x7dd3fc },
+    { z: -112, geo: new THREE.OctahedronGeometry(1.9, 0), color: 0x0ea5e9 },
+    { z: -158, geo: new THREE.TorusGeometry(1.5, 0.45, 20, 48), color: 0x38bdf8 },
+    { z: -204, geo: new THREE.DodecahedronGeometry(1.6, 0), color: 0x7dd3fc },
+    { z: -252, geo: new THREE.BoxGeometry(2.4, 2.4, 2.4), color: 0x0ea5e9, wire: true, wireColor: 0x38bdf8 },
+  ];
+  const zones = zoneDefs.map((d, i) => {
+    const g = new THREE.Group();
+    const main = d.wire
+      ? new THREE.Mesh(d.geo, matWire(d.wireColor, 0.5))
+      : new THREE.Mesh(d.geo, matStandard(d.color));
+    g.add(main);
+    if (!d.wire) {
+      const ring = new THREE.Mesh(
+        new THREE.RingGeometry(d.geo.parameters?.radius ? 2.1 : 2.2, (d.geo.parameters?.radius ? 2.1 : 2.2) + 0.08, 48),
+        matWire(0x7dd3fc, 0.45)
+      );
+      ring.position.z = 0.3;
+      ring.rotation.x = Math.PI / 2.2;
+      g.add(ring);
+    }
+    g.position.set((i % 2 === 0 ? 1 : -1) * 2.6, (i % 3 === 0 ? 1.1 : -0.6), d.z);
+    g.userData.spin = { x: (i % 2 ? 0.12 : -0.1), y: 0.2 + i * 0.03 };
+    g.userData.bob = i * 0.7;
+    world.add(g);
+    return g;
+  });
+
+  // ---- SCATTER OBJECTS (objek kecil di sepanjang jalur terbang) ----
+  const scatter = [];
+  const scatterGeos = [
+    () => new THREE.IcosahedronGeometry(0.3 + Math.random() * 0.3, 0),
+    () => new THREE.OctahedronGeometry(0.25 + Math.random() * 0.28, 0),
+    () => new THREE.BoxGeometry(0.4 + Math.random() * 0.3, 0.4 + Math.random() * 0.3, 0.4 + Math.random() * 0.3),
+    () => new THREE.TetrahedronGeometry(0.3 + Math.random() * 0.3, 0),
+  ];
+  for (let i = 0; i < 40; i++) {
+    const m = new THREE.Mesh(
+      scatterGeos[i % scatterGeos.length](),
+      matStandard(new THREE.Color().setHSL(0.54 + Math.random() * 0.16, 0.7, 0.62), {
+        metalness: 0.4, roughness: 0.3, opacity: 0.7, emissiveIntensity: 0.15,
+      })
+    );
+    const z = -24 - Math.random() * 236;
+    m.position.set(
+      (Math.random() - 0.5) * 12,
+      (Math.random() - 0.5) * 7,
+      z
+    );
     m.userData.spin = { x: (Math.random() - 0.5) * 0.02, y: (Math.random() - 0.5) * 0.02 };
     m.userData.baseY = m.position.y;
-    accentGroup.add(m);
+    m.userData.baseZ = z;
+    scatter.push(m);
+    world.add(m);
   }
-  scene.add(accentGroup);
 
-  scene.add(new THREE.AmbientLight(0xffffff, 0.45));
+  // ---- PARTICLE STREAM (koridor partikel yang terbang lewat) ----
+  const pCount = 1100;
+  const pPos = new Float32Array(pCount * 3);
+  for (let i = 0; i < pCount; i++) {
+    const z = -Math.random() * 280;
+    pPos[i * 3] = (Math.random() - 0.5) * 20;
+    pPos[i * 3 + 1] = (Math.random() - 0.5) * 12;
+    pPos[i * 3 + 2] = z;
+  }
+  const pGeo = new THREE.BufferGeometry();
+  pGeo.setAttribute("position", new THREE.BufferAttribute(pPos, 3));
+  const particles = new THREE.Points(
+    pGeo,
+    new THREE.PointsMaterial({ color: 0x38bdf8, size: 0.06, transparent: true, opacity: 0.65 })
+  );
+  scene.add(particles);
+
+  // ---- GRID FLOOR (landasan kedalaman) ----
+  const grid = new THREE.GridHelper(120, 60, 0x0ea5e9, 0x1e3a5f);
+  grid.material.transparent = true;
+  grid.material.opacity = 0.28;
+  grid.position.y = -5;
+  scene.add(grid);
+
+  scene.add(new THREE.AmbientLight(0xffffff, 0.5));
   const d1 = new THREE.DirectionalLight(0x7dd3fc, 1.2);
-  d1.position.set(5, 6, 6);
-  const d2 = new THREE.DirectionalLight(0xffffff, 0.6);
-  d2.position.set(-5, -3, 4);
+  d1.position.set(5, 6, 8);
+  const d2 = new THREE.DirectionalLight(0xffffff, 0.5);
+  d2.position.set(-6, -3, 4);
   scene.add(d1, d2);
-  const pt = new THREE.PointLight(0x0ea5e9, 18, 24);
-  pt.position.set(0, 2, 4);
+  const pt = new THREE.PointLight(0x0ea5e9, 16, 30);
+  pt.position.set(0, 3, 4);
   scene.add(pt);
 
   window.addEventListener(
     "pointermove",
     (e) => {
-      scrollTarget.x = (e.clientX / window.innerWidth) * 2 - 1;
-      scrollTarget.y = -(e.clientY / window.innerHeight) * 2 + 1;
+      pointer.x = (e.clientX / window.innerWidth) * 2 - 1;
+      pointer.y = -(e.clientY / window.innerHeight) * 2 + 1;
     },
     { passive: true }
   );
 
   function resize() {
-    const w = window.innerWidth;
-    const h = window.innerHeight;
-    renderer.setSize(w, h);
-    camera.aspect = w / h;
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    camera.aspect = window.innerWidth / window.innerHeight;
     camera.updateProjectionMatrix();
   }
   window.addEventListener("resize", resize);
   resize();
 
   const clock = new THREE.Clock();
+  const TRAVEL = 268; // total kedalaman jalur = progress 0..1
+
   function tick() {
     requestAnimationFrame(tick);
     const t = clock.getElapsedTime();
-    const mx = scrollTarget.x;
-    const my = scrollTarget.y;
-    const sp = scrollProgress; // 0..1 page scroll
+    const sp = scrollProgress;
+    const camZ = 6 + sp * TRAVEL;
+    const smoothZ = lerp(camera.position.z, camZ, 0.1);
 
-    // --- scroll-driven transforms ---
-    knot.rotation.x = t * 0.24 + my * 0.35 + sp * 6.0;
-    knot.rotation.y = t * 0.36 + mx * 0.45 + sp * 4.0;
-    knot.scale.setScalar(1 + sp * 0.5);
-    shell.rotation.x = -t * 0.16 - sp * 2.4;
-    shell.rotation.y = t * 0.2 + sp * 3.2;
-    ring1.rotation.z = t * 0.12 + sp * 1.4;
-    ring2.rotation.z = -t * 0.09 - sp * 1.8;
+    // kamera terbang + goyangan halus + parallax mouse
+    camera.position.z = smoothZ;
+    camera.position.x = lerp(camera.position.x, pointer.x * 1.4, 0.04);
+    camera.position.y = lerp(camera.position.y, 0.5 + pointer.y * 0.6 + Math.sin(t * 0.5) * 0.15, 0.04);
+    camera.lookAt(camera.position.x * 1.2, camera.position.y * 0.8, smoothZ + 20);
 
-    const posAttr = particles.geometry.attributes.position;
-    const arr = posAttr.array;
-    const sink = sp * 2.2;
-    for (let i = 0; i < arr.length; i += 3) {
-      arr[i + 1] += Math.sin(t * 0.4 + arr[i] * 0.7 + arr[i + 2] * 0.5) * 0.0012;
-      if (i % 45 === 0) arr[i + 1] = arr[i + 1] - sink * 0.002;
-    }
-    posAttr.needsUpdate = true;
-    particles.rotation.y = t * 0.018 + sp * 1.2;
+    // grid mengikuti kamera agar efek "terbang" terasa
+    grid.position.z = smoothZ;
 
-    accentGroup.children.forEach((m) => {
-      m.rotation.x += m.userData.spin.x;
-      m.rotation.y += m.userData.spin.y;
-      m.position.y = m.userData.baseY + Math.sin(t * 0.6 + m.position.x) * 0.0015 * 10 - sp * 3;
+    // hero knot
+    heroKnot.rotation.x = t * 0.24 + sp * 5;
+    heroKnot.rotation.y = t * 0.36 + sp * 4;
+    heroShell.rotation.x = -t * 0.16 - sp * 2.6;
+    heroShell.rotation.y = t * 0.2 + sp * 3;
+
+    // zone centerpieces
+    zones.forEach((g, i) => {
+      g.rotation.x += g.userData.spin.x;
+      g.rotation.y += g.userData.spin.y;
+      g.position.y += Math.sin(t * 0.6 + g.userData.bob) * 0.004;
     });
 
-    linePositions.length = 0;
-    for (let i = 0; i < count; i++) {
-      const ax = arr[i * 3], ay = arr[i * 3 + 1], az = arr[i * 3 + 2];
-      for (let j = i + 1; j < count; j++) {
-        const dx = ax - arr[j * 3], dy = ay - arr[j * 3 + 1], dz = az - arr[j * 3 + 2];
-        if (dx * dx + dy * dy + dz * dz < maxDist * maxDist) {
-          linePositions.push(ax, ay, az, arr[j * 3], arr[j * 3 + 1], arr[j * 3 + 2]);
-        }
-      }
-    }
-    lines.geometry.setAttribute("position", new THREE.Float32BufferAttribute(linePositions, 3));
-    lines.geometry.attributes.position.needsUpdate = true;
-    lines.geometry.setDrawRange(0, linePositions.length / 3);
+    // scatter objects: spin + drift + parallax
+    scatter.forEach((m) => {
+      m.rotation.x += m.userData.spin.x;
+      m.rotation.y += m.userData.spin.y;
+      m.position.y = m.userData.baseY + Math.sin(t * 0.6 + m.userData.baseZ * 0.1) * 0.35;
+      m.position.z = m.userData.baseZ + sp * 0;
+    });
 
-    // camera pulls back + tilts as you scroll
-    const camZ = 9 + my * 0.6 + sp * 6;
-    group.position.x = mx * 0.5 + sp * 2.2;
-    group.position.y = -my * 0.35 - sp * 1.6;
-    group.rotation.y = mx * 0.18 + sp * 0.6;
-    camera.position.z = camZ;
-    camera.position.y = -sp * 2.4;
-    camera.rotation.x = sp * 0.18;
+    // particles: drift lembut + rotasi global
+    const arr = pGeo.attributes.position.array;
+    for (let i = 0; i < arr.length; i += 3) {
+      arr[i + 1] += Math.sin(t * 0.5 + arr[i] * 0.6 + arr[i + 2] * 0.3) * 0.0018;
+    }
+    pGeo.attributes.position.needsUpdate = true;
+    particles.rotation.y = t * 0.012 + sp * 0.6;
 
     renderer.render(scene, camera);
   }
 
   if (prefersReducedMotion) {
-    knot.rotation.x = 0.5;
-    knot.rotation.y = 0.8;
+    camera.position.z = 6;
+    heroKnot.rotation.x = 0.5;
+    heroKnot.rotation.y = 0.8;
     renderer.render(scene, camera);
   } else {
     tick();
   }
 }
-initScene();
+initJourney();
 
-/* ---------- SCROLL PROGRESS (global, feeds hero) ---------- */
+/* ---------- SCROLL PROGRESS ---------- */
 function updateScrollProgress() {
   const max = document.documentElement.scrollHeight - window.innerHeight;
   scrollProgress = max > 0 ? clamp(window.scrollY / max, 0, 1) : 0;
@@ -211,7 +251,7 @@ function updateScrollProgress() {
 window.addEventListener("scroll", updateScrollProgress, { passive: true });
 updateScrollProgress();
 
-/* ---------- REVEAL ON SCROLL (opacity only; transforms handled by scroll-3D) ---------- */
+/* ---------- REVEAL (opacity) ---------- */
 const revealEls = document.querySelectorAll(".reveal");
 const io = new IntersectionObserver(
   (entries) => {
@@ -229,7 +269,7 @@ revealEls.forEach((el, i) => {
   io.observe(el);
 });
 
-/* ---------- SCROLL-DRIVEN 3D TRANSFORMS ---------- */
+/* ---------- SCROLL-DRIVEN 3D (section cards) ---------- */
 function initScroll3D() {
   const vh = window.innerHeight;
   const registry = [];
@@ -257,13 +297,11 @@ function initScroll3D() {
     const winTop = window.scrollY;
     registry.forEach((item) => {
       const r = item.el.getBoundingClientRect();
-      const enter = winTop + vh - r.top - 40; // progress as element travels
+      const enter = winTop + vh - r.top - 40;
       const span = vh * 0.9;
-      let p = clamp(enter / span, 0, 1);
+      const p = clamp(enter / span, 0, 1);
 
       if (item.kind === "fan") {
-        // 3D fan: children rotateX/rotateY based on scroll, center child pops toward viewer
-        const depth = 1 - p;
         item.el.style.transform = `perspective(1400px) rotateX(${lerp(-22, 0, p)}deg)`;
         item.el.style.transformOrigin = "50% 0%";
         item.childTf.forEach(({ c, base }) => {
@@ -271,17 +309,11 @@ function initScroll3D() {
           const rotX = lerp(-16, 0, p);
           const z = lerp(-140, 0, p) + Math.cos(base * Math.PI) * lerp(120, 0, p);
           c.style.transform = `rotateY(${rotY}deg) rotateX(${rotX}deg) translateZ(${z}px)`;
-          c.style.transition = "transform .1s linear";
           c.style.willChange = "transform";
         });
       } else if (item.kind === "card") {
         item.el.style.transform = `perspective(1200px) rotateY(${lerp(-14, 0, p)}deg) rotateX(${lerp(10, 0, p)}deg) translateZ(${lerp(-60, 0, p)}px)`;
-      } else if (item.kind === "hero") {
-        // parallax: content drifts in 3D as user leaves hero
-        const hp = clamp(winTop / vh, 0, 1);
-        item.el.style.transform = `translateZ(${-hp * 140}px) scale(${1 - hp * 0.06})`;
       }
-      void depth;
     });
   }
 
@@ -345,10 +377,9 @@ if (!prefersReducedMotion) {
   });
 }
 
-/* ---------- INDUSTRY MARQUEE (infinite 3D scroll strip) ---------- */
+/* ---------- INDUSTRY 3D MARQUEE ---------- */
 const industryGrid = document.getElementById("industryGrid");
 if (industryGrid && !prefersReducedMotion) {
-  // duplicate items for seamless loop, render as tilted plane
   const items = [...industryGrid.children].map((c) => c.cloneNode(true));
   items.forEach((c) => {
     c.classList.remove("reveal");

@@ -8,9 +8,10 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;500;600;700&family=Source+Sans+3:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="styles.css?v=20260818b" />
+  <link rel="stylesheet" href="styles.css?v=20260818c" />
 </head>
 <body>
+  <canvas id="bg-canvas" aria-hidden="true"></canvas>
   <a class="skip-link" href="#main">Langsung ke konten</a>
 
   <!-- NAV -->
@@ -50,8 +51,7 @@
 
   <main id="main">
     <!-- HERO -->
-    <section class="hero" id="home" data-3d="hero">
-      <canvas id="hero-canvas" aria-hidden="true"></canvas>
+    <section class="hero" id="home">
       <div class="hero-overlay" aria-hidden="true"></div>
       <div class="hero-content">
         <p class="eyebrow reveal">Terpercaya sejak 2017</p>
@@ -96,7 +96,7 @@
     </section>
 
     <!-- LAYANAN -->
-    <section class="section" id="layanan">
+    <section class="section glass" id="layanan" data-zone="layanan">
       <div class="container">
         <div class="section-head reveal">
           <p class="eyebrow">Layanan Kami</p>
@@ -142,7 +142,7 @@
     </section>
 
     <!-- TENTANG -->
-    <section class="section section-alt" id="tentang">
+    <section class="section section-alt glass" id="tentang" data-zone="tentang">
       <div class="container">
         <div class="section-head reveal">
           <p class="eyebrow">Tentang Kami</p>
@@ -189,7 +189,7 @@
     </section>
 
     <!-- KEUNGGULAN -->
-    <section class="section" id="keunggulan">
+    <section class="section glass" id="keunggulan" data-zone="keunggulan">
       <div class="container">
         <div class="section-head reveal">
           <p class="eyebrow">Keunggulan Kami</p>
@@ -208,7 +208,7 @@
     </section>
 
     <!-- PROSES -->
-    <section class="section section-dark" id="proses">
+    <section class="section section-dark glass-dark" id="proses" data-zone="proses">
       <div class="container">
         <div class="section-head reveal">
           <p class="eyebrow">Proses Kerja</p>
@@ -245,7 +245,7 @@
     </section>
 
     <!-- KLIEN -->
-    <section class="section" id="klien">
+    <section class="section glass" id="klien" data-zone="klien">
       <div class="container">
         <div class="section-head reveal">
           <p class="eyebrow">Klien Kami</p>
@@ -267,7 +267,7 @@
     </section>
 
     <!-- TESTIMONI -->
-    <section class="section section-alt" id="testimoni">
+    <section class="section section-alt glass" id="testimoni" data-zone="testimoni">
       <div class="container">
         <div class="section-head reveal">
           <p class="eyebrow">Testimoni Klien</p>
@@ -295,7 +295,7 @@
     </section>
 
     <!-- CTA -->
-    <section class="cta-final" id="cta">
+    <section class="cta-final glass-dark" id="cta" data-zone="cta">
       <div class="container">
         <div class="cta-card reveal" data-3d="card">
           <h2>Siap Mengoptimalkan Bisnis Anda?</h2>
@@ -315,7 +315,7 @@
   </main>
 
   <!-- FOOTER -->
-  <footer class="footer">
+  <footer class="footer glass-dark" data-zone="footer">
     <div class="container footer-grid">
       <div class="footer-brand">
         <a href="#home" class="brand brand-light">
@@ -365,6 +365,6 @@
     </div>
   </footer>
 
-  <script type="module" src="main.js?v=20260818b"></script>
+  <script type="module" src="main.js?v=20260818c"></script>
 </body>
 </html>
