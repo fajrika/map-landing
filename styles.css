@@ -249,6 +249,7 @@ img, svg { display: block; }
   .footer-grid { grid-template-columns: 1fr 1fr 1fr; }
 }
 @media (max-width: 768px) {
+  html, body { overflow-x: hidden; }
   body { font-size: 16px; }
   .nav-links { display: none; }
   .nav-inner .btn-sm { display: none; }
@@ -262,12 +263,25 @@ img, svg { display: block; }
   .steps { grid-template-columns: 1fr; }
   .industry-grid { grid-template-columns: 1fr 1fr; }
   .footer-grid { grid-template-columns: 1fr 1fr; }
-  .hero-content { padding: 120px var(--space-4) 80px; }
+  .hero-content { padding: 110px var(--space-4) 80px; }
+  .hero-title { font-size: clamp(1.9rem, 9vw, 2.5rem); }
+  .hero-sub { font-size: 1.05rem; }
   .list { grid-template-columns: 1fr; }
+  /* performa mobile: nonaktifkan blur + transform 3D fan */
+  .glass, .glass-dark, .section-alt, .stats, .card, .feature, .industry, .step { backdrop-filter: none; -webkit-backdrop-filter: none; }
+  .card, .feature, .industry { background: rgba(255,255,255,.92); }
+  .section-dark, .glass-dark, .cta-final, .footer { background: rgba(11,18,32,.88); }
+  [data-3d="fan"], [data-3d="fan"] > *, [data-3d="card"] { transform: none !important; transform-style: flat; }
+  .marquee-track .industry { min-width: 150px; }
 }
 @media (max-width: 420px) {
+  html, body { overflow-x: hidden; }
   .industry-grid { grid-template-columns: 1fr; }
   .footer-grid { grid-template-columns: 1fr; }
+  .section { padding: var(--space-6) 0; }
+  .stat-num { font-size: 2.2rem; }
+  .hero-cta .btn-lg { width: 100%; }
+  .scroll-hint { display: none; }
 }
 
 @media (prefers-reduced-motion: reduce) {

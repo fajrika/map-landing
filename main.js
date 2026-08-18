@@ -1,6 +1,7 @@
 import * as THREE from "./vendor/three/three.module.min.js";
 
 const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+const isMobile = window.matchMedia("(max-width: 768px)").matches || navigator.maxTouchPoints > 0;
 const clamp = (v, min, max) => Math.min(Math.max(v, min), max);
 const lerp = (a, b, t) => a + (b - a) * t;
 
@@ -35,8 +36,8 @@ const pointer = { x: 0, y: 0 };
 
 function initJourney() {
   const canvas = document.getElementById("bg-canvas");
-  const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  const renderer = new THREE.WebGLRenderer({ canvas, antialias: !isMobile, alpha: true });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, isMobile ? 1.5 : 2));
   renderer.setClearColor(0x0b1220, 1);
 
   const scene = new THREE.Scene();
@@ -110,7 +111,7 @@ function initJourney() {
     () => new THREE.BoxGeometry(0.4 + Math.random() * 0.3, 0.4 + Math.random() * 0.3, 0.4 + Math.random() * 0.3),
     () => new THREE.TetrahedronGeometry(0.3 + Math.random() * 0.3, 0),
   ];
-  for (let i = 0; i < 40; i++) {
+  for (let i = 0; i < (isMobile ? 24 : 40); i++) {
     const m = new THREE.Mesh(
       scatterGeos[i % scatterGeos.length](),
       matStandard(new THREE.Color().setHSL(0.54 + Math.random() * 0.16, 0.7, 0.62), {
@@ -131,7 +132,7 @@ function initJourney() {
   }
 
   // ---- PARTICLE STREAM (koridor partikel yang terbang lewat) ----
-  const pCount = 1100;
+  const pCount = isMobile ? 480 : 1100;
   const pPos = new Float32Array(pCount * 3);
   for (let i = 0; i < pCount; i++) {
     const z = -Math.random() * 280;
@@ -185,6 +186,10 @@ function initJourney() {
   const TRAVEL = 268; // total kedalaman jalur = progress 0..1
 
   function tick() {
+    if (document.hidden) {
+      setTimeout(tick, 250);
+      return;
+    }
     requestAnimationFrame(tick);
     const t = clock.getElapsedTime();
     const sp = scrollProgress;
@@ -318,6 +323,9 @@ function initScroll3D() {
   }
 
   if (prefersReducedMotion) return;
+  // di layar kecil: 3D fan terlalu berat & bisa bikin layout melompat → nonaktifkan,
+  // biarkan world journey 3D di belakang yang memberi kedalaman.
+  if (isMobile) return;
   let raf = 0;
   const onScroll = () => {
     cancelAnimationFrame(raf);
