@@ -208,9 +208,35 @@ img, svg { display: block; }
 .footer-bottom div { display: flex; gap: 18px; }
 .footer-bottom a:hover { color: var(--color-sky); }
 
-/* REVEAL ANIMATION */
-.reveal { opacity: 0; transform: translateY(26px); transition: opacity .7s var(--ease), transform .7s var(--ease); }
-.reveal.visible { opacity: 1; transform: none; }
+/* REVEAL ANIMATION (opacity only — 3D transform ditangani scroll-3D engine) */
+.reveal { opacity: 0; transition: opacity .7s var(--ease); }
+.reveal.visible { opacity: 1; }
+
+/* SCROLL-3D */
+[data-3d="fan"], [data-3d="card"] { transform-style: preserve-3d; will-change: transform; }
+[data-3d="fan"] > * { transform-style: preserve-3d; will-change: transform; }
+[data-3d="hero"] { will-change: transform; }
+
+/* INDUSTRY 3D MARQUEE */
+.marquee-track {
+  display: flex;
+  gap: 16px;
+  overflow: hidden;
+  perspective: 900px;
+  padding: 8px 0;
+}
+.marquee-track .industry {
+  flex: 0 0 auto;
+  min-width: 220px;
+  transform: rotateX(6deg);
+  animation: marquee 26s linear infinite;
+}
+.marquee-track .industry:nth-child(even) { animation-duration: 30s; animation-direction: reverse; }
+@keyframes marquee {
+  from { transform: translateX(0) rotateX(6deg); }
+  to { transform: translateX(-50%) rotateX(6deg); }
+}
+.marquee-track:hover .industry { animation-play-state: paused; }
 
 /* RESPONSIVE */
 @media (max-width: 1024px) {
